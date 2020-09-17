@@ -1,0 +1,7 @@
+---
+center_weight: 3430 # N
+N: 2 # flight load factor (L/W)
+span: 60 # m
+wing_area: 90 # m^2
+taper_ratio: .5
+...
