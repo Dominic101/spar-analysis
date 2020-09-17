@@ -4,4 +4,7 @@ N: 2 # flight load factor (L/W)
 span: 60 # m
 wing_area: 90 # m^2
 taper_ratio: .5
+r_i: .2 # m, for spar size
+m: -.000333333333 # for spar size
+b: .215 # m, for spar size
 ...

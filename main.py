@@ -6,6 +6,7 @@ Created on Wed Sep 16 19:54:20 2020
 """
 
 import yaml
+import math
 import matplotlib.pyplot as plt
 
 with open('params.yaml') as f:
@@ -21,6 +22,9 @@ class Yaml_Parse:
         self.span = data['span']
         self.wing_area = data['wing_area']
         self.taper_ratio = data['taper_ratio']
+        self.m = float(data['m']) # TODO see why the negative makes it a string
+        self.b = data['b']
+        self.r_i = data['r_i']
         
 d = Yaml_Parse()
 
@@ -61,13 +65,19 @@ def distributed_load_y(y):
     """
     return const.m*y+const.b
 
+def r_0_y(y):
+    """
+    return r_0 at y
+    """
+    return d.m*y + d.b
+    
 def shear_root():
     """
     calculates shear at the root in N
     """
     return -d.N*d.center_weight/2
 
-def moment_root(y):
+def moment_root():
     """
     calculates moment at the root in N*M
     """
@@ -80,53 +90,89 @@ def shear_y(y):
     """
     return const.m/2*y**2 + const.b*y + shear_root()
 
+def get_I(y):
+    return math.pi/4*(r_0_y(y) - d.r_i**4)
+
 def moment_y(y):
     """
     calculates moment at a location y in N*M
     """
     return const.m/6*y**3 + const.b/2*y**2 + shear_root()*y + moment_root()
 
-def max_axial_stress_y(y):
-    """
-    calculates max axial stress at a location y in Mpa
-    """
-    pass
-
 def max_shear_stress_y(y):
     """
     calculates max shear stress at a location y in Mpa
     """
-    pass
+    return -shear_y(y)*(2/3)*(r_0_y(y)**3 - d.r_i**3)/(10**6*max_axial_stress_y(y)\
+    *2*(r_0_y(y)-d.r_i))
+
+def max_axial_stress_y(y):
+    """
+    calculates max axial stress at a location y in Mpa
+    """
+    return moment_y(y)*r_0_y(y)/(get_I(y)*10**6)
 
 def max_axial_stress_wing():
     """
     calculates max axial stress thoughout 
     the entire wing in Mpa
     """
-    pass
+    # TODO: maybe use scipy for this
+    delta = .01 # distance between points
+    points = [i*delta for i in range(int(.5*d.span/delta))]
+    return max([max_axial_stress_y(i) for i in points])
 
 def max_shear_stress_wing():
     """
     calculates max shear stress throughout
     the entire wing in Mpa
     """
-    pass
-
-
+    # TODO: maybe use scipy for this
+    delta = .01 # distance between points
+    points = [i*delta for i in range(int(.5*d.span/delta))]
+    return max([max_shear_stress_y(i) for i in points])
 
 ###### plotting functions ########
 
-def plot_data():
+def gen_plot_data():
     delta = .01 # distance between points
     points = [i*delta for i in range(int(.5*d.span/delta))]
+    
     shears = [shear_y(i) for i in points]
+    moments = [moment_y(i) for i in points]
+    shear_s = [max_shear_stress_y(i) for i in points] # shear stress
+    axial_s = [max_axial_stress_y(i) for i in points] # axial stress
     
     plt.plot(points, shears)
-    
-if True:
-    plot_data()
     plt.title('Shear vs location on wing')
     plt.xlabel('distance from center (m)')
-    plt.ylabel('Shear Mpa')
+    plt.ylabel('Shear (N)')
+    plt.grid()
     plt.show()
+    
+    plt.plot(points, moments)
+    plt.title('moment vs location on wing')
+    plt.xlabel('distance from center (m)')
+    plt.ylabel('Moment (N*m)')
+    plt.grid()
+    plt.show()
+    
+    plt.plot(points, shear_s)
+    plt.title('Shear stress vs location on wing')
+    plt.xlabel('distance from center (m)')
+    plt.ylabel('shear stress (MPa)')
+    plt.grid()
+    plt.show()
+    
+    plt.plot(points, axial_s)
+    plt.title('axial stress vs location on wing')
+    plt.xlabel('distance from center (m)')
+    plt.ylabel('axial stress (MPa)')
+    plt.grid()
+    plt.show()
+    
+if True:
+    gen_plot_data()
+    
+    
     
