@@ -91,7 +91,7 @@ def shear_y(y):
     return const.m/2*y**2 + const.b*y + shear_root()
 
 def get_I(y):
-    return math.pi/4*(r_0_y(y) - d.r_i**4)
+    return math.pi/4*(r_0_y(y)**4 - d.r_i**4)
 
 def moment_y(y):
     """
@@ -103,7 +103,7 @@ def max_shear_stress_y(y):
     """
     calculates max shear stress at a location y in Mpa
     """
-    return -shear_y(y)*(2/3)*(r_0_y(y)**3 - d.r_i**3)/(10**6*max_axial_stress_y(y)\
+    return -shear_y(y)*(2/3)*(r_0_y(y)**3 - d.r_i**3)/(10**6*get_I(y)\
     *2*(r_0_y(y)-d.r_i))
 
 def max_axial_stress_y(y):
@@ -173,6 +173,7 @@ def gen_plot_data():
     
 if True:
     gen_plot_data()
+    #print(max_axial_stress_wing())
     
     
     
