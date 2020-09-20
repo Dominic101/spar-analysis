@@ -25,6 +25,11 @@ class Yaml_Parse:
         self.m = float(data['m']) # TODO see why the negative makes it a string
         self.b = data['b']
         self.r_i = data['r_i']
+        self.V = data['V']
+        self.p = data['p']
+        self.R_outer = data['R_outer']
+        self.length = data['length']
+        self.G = data['G']
         
 d = Yaml_Parse()
 
@@ -34,6 +39,7 @@ class Statics:
         self.root_cord = self.get_root_cord()
         self.m = self.get_m()
         self.b = self.get_b()
+        self.q = self.get_q()
         
     def get_kp(self):
         """
@@ -50,11 +56,24 @@ class Statics:
     def get_b(self):
         return self.root_cord*self.kp
     
+    def get_q(self):
+        """
+        return flight dynamic pressure
+        """
+        return .5*d.p*d.V**2
+    
 const = Statics()
 
 def get_cord_y(y):
     """
     calculates cord length at a location y
+    """
+    eta = 2*y/d.b
+    return d.wing_area/d.b * 2/(1+d.taper_ratio) * (1+(d.taper_ratio-1)*eta) 
+
+def get_cm_y(y):
+    """
+    calculates local pitching moment
     """
     pass
 
@@ -132,6 +151,48 @@ def max_shear_stress_wing():
     points = [i*delta for i in range(int(.5*d.span/delta))]
     return max([max_shear_stress_y(i) for i in points])
 
+###### tube sizing functions #########
+
+def torsion_moment(y):
+    """
+    computes the torsion moment at point y
+    eq 21
+    """
+    delta = .01 # discrete integration steps
+    sum_ = 0
+    for y_step*delta in range(y/delta,d.b/(2*delta)):
+        sum_ += const.q * get_cord_y(y_step)**2 * get_cm_y(y_step)*delta
+    return sum_
+
+def torsion_strength():
+    """
+    computes thickness of tube (m) based on strength sizing
+    eq 34
+    """
+    max_torsion = torsion_moment(0) # TODO put this in statics class
+    return max_torsion/(2*math.pi*d.R_outer**2*max_shear_stress_wing())
+
+def torsion_stiff():
+    """
+    computes thickness of tube (m) based on stiffness sizing
+    eq 37
+    """ 
+    max_torsion = torsion_moment(0) # TODO put this in statics class
+    return max_torsion*d.length/(2*math.pi*d.R_outer**3*d.G)
+
+def bending_strength():
+    """
+    computes thickness of tube (m) based on bending strength sizing
+    eq 40
+    """ 
+    pass
+
+def bending_deflect():
+    """
+    computes thickness of tube (m) based on bending deflection sizing
+    eq 46
+    """ 
+    pass
 ###### plotting functions ########
 
 def gen_plot_data():
@@ -173,7 +234,13 @@ def gen_plot_data():
     
 if True:
     gen_plot_data()
-    #print(max_axial_stress_wing())
+    
+if False:
+    print('max axial wing stress: ', max_axial_stress_wing())
+    print('thickness of tube spar from torsion stength: ',\
+          torsion_strength())
+    print('thickness of tube spar from torsion stiffness: ',\
+          torsion_stiff())
     
     
     

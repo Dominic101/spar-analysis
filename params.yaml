@@ -7,4 +7,9 @@ taper_ratio: .5
 r_i: .2 # m, for spar size
 m: -.000333333333 # for spar size
 b: .215 # m, for spar size
+V: 20 # m/s flight speed
+p: 36.2 # kg/m^3air density
+R_outer: .15 # m outer radius of tube spar
+length: 10 # m length
+G: 3 # torsion stiffness (totally a guess right now)
 ...
