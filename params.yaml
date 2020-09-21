@@ -1,6 +1,6 @@
 ---
 center_weight: 3430 # N
-N: 2 # flight load factor (L/W)
+N: 1.5 # flight load factor (L/W)
 span: 60 # m
 wing_area: 90 # m^2
 taper_ratio: .5
@@ -11,5 +11,8 @@ V: 20 # m/s flight speed
 p: 36.2 # kg/m^3air density
 R_outer: .15 # m outer radius of tube spar
 length: 10 # m length
-G: 3 # torsion stiffness (totally a guess right now)
+G: 4550.5 # Mpa torsion stiffness  modulus
+E: 310262 # Mpa bending stiffness modulus
+allowed_ax_stress:  1200 # Mpa max allowable axial stress (this number should be knocked down from the true value)
+deflection: 5 # m max allowed bending deflection of spar
 ...

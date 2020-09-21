@@ -30,6 +30,7 @@ class Yaml_Parse:
         self.R_outer = data['R_outer']
         self.length = data['length']
         self.G = data['G']
+        self.allowed_ax_stress = data['allowed_ax_stress']
         
 d = Yaml_Parse()
 
@@ -160,39 +161,39 @@ def torsion_moment(y):
     """
     delta = .01 # discrete integration steps
     sum_ = 0
-    for y_step*delta in range(y/delta,d.b/(2*delta)):
-        sum_ += const.q * get_cord_y(y_step)**2 * get_cm_y(y_step)*delta
+    for y_step in range(y/delta,d.b/(2*delta)):
+        sum_ += const.q * get_cord_y(y_step*delta)**2 * get_cm_y(y_step*delta)*delta
     return sum_
 
 def torsion_strength():
     """
-    computes thickness of tube (m) based on strength sizing
+    computes thickness of tube (cm) based on strength sizing
     eq 34
     """
     max_torsion = torsion_moment(0) # TODO put this in statics class
-    return max_torsion/(2*math.pi*d.R_outer**2*max_shear_stress_wing())
+    return 10*max_torsion/(2*math.pi*d.R_outer**2*max_shear_stress_wing())
 
 def torsion_stiff():
     """
-    computes thickness of tube (m) based on stiffness sizing
+    computes thickness of tube (cm) based on stiffness sizing
     eq 37
     """ 
     max_torsion = torsion_moment(0) # TODO put this in statics class
-    return max_torsion*d.length/(2*math.pi*d.R_outer**3*d.G)
+    return 10*max_torsion*d.length/(2*math.pi*d.R_outer**3*d.G)
 
-def bending_strength():
+def bending_strength(y):
     """
-    computes thickness of tube (m) based on bending strength sizing
+    computes thickness of tube (cm) at y based on bending strength sizing
     eq 40
     """ 
-    pass
+    return 10*moment_y(y)/(math.pi*d.R_outer**2 * d.allowed_ax_stress*1000000)
 
 def bending_deflect():
     """
-    computes thickness of tube (m) based on bending deflection sizing
+    computes thickness of tube (cm) based on bending deflection sizing
     eq 46
     """ 
-    pass
+    (1/8 * 3000 * d.length**3)/(math.pi*d.R_outer**2*d.deflection*d.E*1000000)
 ###### plotting functions ########
 
 def gen_plot_data():
@@ -203,6 +204,8 @@ def gen_plot_data():
     moments = [moment_y(i) for i in points]
     shear_s = [max_shear_stress_y(i) for i in points] # shear stress
     axial_s = [max_axial_stress_y(i) for i in points] # axial stress
+    t_ben_stren = [bending_strength(i) for i in points] # tube thickness from bending strength
+    #t_ben_deflect = [bending_deflect(i) for i in points] # tube thickness from bending deflection
     
     plt.plot(points, shears)
     plt.title('Shear vs location on wing')
@@ -231,6 +234,20 @@ def gen_plot_data():
     plt.ylabel('axial stress (MPa)')
     plt.grid()
     plt.show()
+    
+    plt.plot(points, t_ben_stren)
+    plt.title('tube thickness on spar do to bending strength')
+    plt.xlabel('distance from center (m)')
+    plt.ylabel('thickness (cm)')
+    plt.grid()
+    plt.show()
+    
+#    plt.plot(points, t_ben_deflect)
+#    plt.title('tube thickness on spar do to bending deflection constraint 5 m')
+#    plt.xlabel('distance from center (m)')
+#    plt.ylabel('thickness (cm)')
+#    plt.grid()
+#    plt.show()
     
 if True:
     gen_plot_data()
