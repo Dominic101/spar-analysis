@@ -171,7 +171,7 @@ def torsion_strength():
     eq 34
     """
     max_torsion = torsion_moment(0) # TODO put this in statics class
-    return 10*max_torsion/(2*math.pi*d.R_outer**2*max_shear_stress_wing())
+    return 100*max_torsion/(2*math.pi*d.R_outer**2*max_shear_stress_wing())
 
 def torsion_stiff():
     """
@@ -179,14 +179,14 @@ def torsion_stiff():
     eq 37
     """ 
     max_torsion = torsion_moment(0) # TODO put this in statics class
-    return 10*max_torsion*d.length/(2*math.pi*d.R_outer**3*d.G)
+    return 100*max_torsion*d.length/(2*math.pi*d.R_outer**3*d.G)
 
 def bending_strength(y):
     """
     computes thickness of tube (cm) at y based on bending strength sizing
     eq 40
     """ 
-    return 10*moment_y(y)/(math.pi*d.R_outer**2 * d.allowed_ax_stress*1000000)
+    return 100*moment_y(y)/(math.pi*d.R_outer**2 * d.allowed_ax_stress*1000000)
 
 def bending_deflect():
     """
