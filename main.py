@@ -31,6 +31,8 @@ class Yaml_Parse:
         self.length = data['length']
         self.G = data['G']
         self.allowed_ax_stress = data['allowed_ax_stress']
+        self.delta = data['delta']
+        self.R_inner = data['R_inner']
         
 d = Yaml_Parse()
 
@@ -119,6 +121,9 @@ def moment_y(y):
     """
     return const.m/6*y**3 + const.b/2*y**2 + shear_root()*y + moment_root()
 
+def deflection(y):
+    pass
+
 def max_shear_stress_y(y):
     """
     calculates max shear stress at a location y in Mpa
@@ -159,34 +164,74 @@ def torsion_moment(y):
     computes the torsion moment at point y
     eq 21
     """
-    delta = .01 # discrete integration steps
+    delta = .1 # discrete integration steps
     sum_ = 0
-    for y_step in range(y/delta,d.b/(2*delta)):
+    for y_step in range(int(y/delta),int(d.b/(2*delta))):
         sum_ += const.q * get_cord_y(y_step*delta)**2 * get_cm_y(y_step*delta)*delta
     return sum_
 
-def torsion_strength():
+def torsion_strength(y):
     """
-    computes thickness of tube (cm) based on strength sizing
+    computes thickness of tube (cm) at y based on strength sizing
     eq 34
     """
-    max_torsion = torsion_moment(0) # TODO put this in statics class
-    return 100*max_torsion/(2*math.pi*d.R_outer**2*max_shear_stress_wing())
+    #max_torsion = torsion_moment(0)
+    # is this max allowed shear stress?????
+    return 100*torsion_moment(y)/(2*math.pi*d.R_outer**2*max_shear_stress_wing())
 
-def torsion_stiff():
+def torsion_stiff(y):
     """
-    computes thickness of tube (cm) based on stiffness sizing
+    computes thickness of tube (cm) at y based on stiffness sizing
     eq 37
     """ 
-    max_torsion = torsion_moment(0) # TODO put this in statics class
-    return 100*max_torsion*d.length/(2*math.pi*d.R_outer**3*d.G)
+    # max_torsion = torsion_moment(0)
+    return 100*torsion_moment(y)*d.length/(2*math.pi*d.R_outer**3*d.G)
 
 def bending_strength(y):
     """
     computes thickness of tube (cm) at y based on bending strength sizing
     eq 40
     """ 
-    return 100*moment_y(y)/(math.pi*d.R_outer**2 * d.allowed_ax_stress*1000000)
+    return 100*moment_y(y)/(1.913*d.R_outer**2 * d.allowed_ax_stress*1000000)
+
+def size_bending():
+    """
+    strength thickness, distribution load, shear, moment, deflection
+    all as functions of spanwise distance.
+    
+    returns each in a data dictionary
+    """
+    y_sec = [y*d.delta for y in range(0,int(d.span/(2*d.delta)))] # discrete points along the wing
+    
+    # get cap thickness for strength constraint
+    thickness = [bending_strength(y) for y in y_sec]
+    
+    # get load distribution
+    dist_load = [distributed_load_y(y) for y in y_sec]
+    
+    # get shear distribution
+    shear = [shear_root()]
+    #shear = [0]
+    for y in range(1,len(y_sec)):
+        shear.append(shear[y-1] + dist_load[y]*d.delta)
+    
+    # get moment distribution
+    moment = [moment_root()]
+    #moment = [0]
+    for y in range(1,len(y_sec)):
+        moment.append(moment[y-1] + shear[y]*d.delta)
+        
+    # moment of inertia distribution
+    I = []
+    for y in range(len(y_sec)):
+        I.append(d.R_inner**3*thickness[y]*1.913)
+        
+    # calculates deflection distribution
+        
+    
+    return {'y':y_sec, 'thickness':thickness, 'load': dist_load,\
+            'shear':shear, 'moment':moment}
+    
 
 def bending_deflect():
     """
@@ -204,8 +249,10 @@ def gen_plot_data():
     moments = [moment_y(i) for i in points]
     shear_s = [max_shear_stress_y(i) for i in points] # shear stress
     axial_s = [max_axial_stress_y(i) for i in points] # axial stress
-    t_ben_stren = [bending_strength(i) for i in points] # tube thickness from bending strength
+    ben_stren = [bending_strength(i) for i in points] # tube thickness from bending strength
     #t_ben_deflect = [bending_deflect(i) for i in points] # tube thickness from bending deflection
+    t_ben_stiff = [torsion_stiff(i) for i in points] # tube thickness from torsion stiffness
+    t_ben_stren = [torsion_strength(i) for i in points] # tube thickness from torsion strength
     
     plt.plot(points, shears)
     plt.title('Shear vs spanwise distance')
@@ -235,6 +282,8 @@ def gen_plot_data():
     plt.grid()
     plt.show()
     
+    plt.plot(points, ben_stren)
+    plt.plot(points, t_ben_stiff)
     plt.plot(points, t_ben_stren)
     plt.title('Minimum Tube Spar Thickness (Bending Strength)', fontsize = '18')
     plt.xlabel('Spanwise Distance (m)', fontsize = '18')
@@ -249,7 +298,7 @@ def gen_plot_data():
 #    plt.grid()
 #    plt.show()
     
-if True:
+if False:
     gen_plot_data()
     
 if False:
@@ -259,5 +308,33 @@ if False:
     print('thickness of tube spar from torsion stiffness: ',\
           torsion_stiff())
     
+data = size_bending()
+
+plt.plot(data['y'], data['load'])
+plt.title('Distributed Load vs spanwise distance')
+plt.xlabel('spanwise distance (m)')
+plt.ylabel('Load (N)')
+plt.grid()
+plt.show()
+
+plt.plot(data['y'], data['shear'])
+plt.title('Shear vs spanwise distance')
+plt.xlabel('spanwise distance (m)')
+plt.ylabel('Shear (N)')
+plt.grid()
+plt.show()
+
+plt.plot(data['y'], data['moment'])
+plt.title('Moment vs Spanwise Distance', fontsize = '18')
+plt.xlabel('Spanwise Distance (m)', fontsize = '18')
+plt.ylabel('Moment (N*m)', fontsize = '18')
+plt.grid()
+plt.show()
     
+plt.plot(data['y'], data['thickness'])
+plt.title('Minimum Tube Cap Thickness (Bending Strength)', fontsize = '18')
+plt.xlabel('Spanwise Distance (m)', fontsize = '18')
+plt.ylabel('Thickness (cm)', fontsize = '18')
+plt.grid()
+plt.show()
     

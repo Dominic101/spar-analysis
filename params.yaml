@@ -10,9 +10,11 @@ b: .215 # m, for spar size
 V: 20 # m/s flight speed
 p: 36.2 # kg/m^3air density
 R_outer: .1 # m outer radius of tube spar
-length: 10 # m length
+R_inner: .1
+length: 30 # m length
 G: 4550.5 # Mpa torsion stiffness  modulus
 E: 310262 # Mpa bending stiffness modulus
 allowed_ax_stress:  400 # Mpa max allowable axial stress (this number should be knocked down from the true value)
 deflection: 5 # m max allowed bending deflection of spar
+delta: .001 # integration step size
 ...
