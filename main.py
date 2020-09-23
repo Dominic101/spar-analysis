@@ -30,6 +30,7 @@ class Yaml_Parse:
         self.R_outer = data['R_outer']
         self.length = data['length']
         self.G = data['G']
+        self.E = data['E']
         self.allowed_ax_stress = data['allowed_ax_stress']
         self.delta = data['delta']
         self.R_inner = data['R_inner']
@@ -224,13 +225,19 @@ def size_bending():
     # moment of inertia distribution
     I = []
     for y in range(len(y_sec)):
-        I.append(d.R_inner**3*thickness[y]*1.913)
+        I.append(d.R_inner**3*thickness[y]*.01*1.913) # .001 converts from cm to m
         
     # calculates deflection distribution
+    theta = [0]
+    deflection=[0]
+    for y in range(1,len(y_sec)):
+        theta.append(theta[y-1]+d.delta*moment[y]/(d.E*1000000*I[y]))
+    for y in range(1,len(y_sec)):
+        deflection.append(deflection[y-1] + d.delta*theta[y])
         
     
     return {'y':y_sec, 'thickness':thickness, 'load': dist_load,\
-            'shear':shear, 'moment':moment}
+            'shear':shear, 'moment':moment, 'deflection':deflection}
     
 
 def bending_deflect():
@@ -335,6 +342,13 @@ plt.plot(data['y'], data['thickness'])
 plt.title('Minimum Tube Cap Thickness (Bending Strength)', fontsize = '18')
 plt.xlabel('Spanwise Distance (m)', fontsize = '18')
 plt.ylabel('Thickness (cm)', fontsize = '18')
+plt.grid()
+plt.show()
+
+plt.plot(data['y'], data['deflection'])
+plt.title('Wing Deflection vs Spanwise Distance', fontsize = '18')
+plt.xlabel('Spanwise Distance (m)', fontsize = '18')
+plt.ylabel('Deflection (m)', fontsize = '18')
 plt.grid()
 plt.show()
     
