@@ -21,7 +21,6 @@ class Yaml_Parse:
         self.N = data['N']
         self.span = data['span']
         self.wing_area = data['wing_area']
-        #self.taper_ratio = data['taper_ratio']
         self.V = data['V']
         self.p = data['p']
         self.R_outer = data['R_outer']
@@ -32,6 +31,8 @@ class Yaml_Parse:
         self.delta = data['delta']
         self.R_inner = data['R_inner']
         self.layup_density = data['layup_density']
+        self.strut_loc = data['strut_loc']
+        self.carb_thick = data['carb_thick']
         
 d = Yaml_Parse()
 
@@ -66,8 +67,8 @@ const = Statics()
     
 def radius(y):
 
-    if y <= 7.5:
-        return 0.04*get_cord_y(7.5)
+    if y <= 5.0:
+        return 0.04*get_cord_y(5.0)
     elif y <= 15:
         return 0.04*get_cord_y(15)
     else:
@@ -100,7 +101,7 @@ def shear_root():
 
 def get_mass(thickness):
     """
-    computes mass (kg) of enture tube spar caps given discretizated thickness
+    computes mass (kg) of half span spar caps given discretizated thickness
     """
     weight = 0
     for index, t in enumerate(thickness):
@@ -117,35 +118,52 @@ def size_bending():
     
     returns each in a data dictionary
     """
-    print(const.kp, 'aaaaaaaaaaaa')
     
     y_sec = [y*d.delta for y in range(0,int(d.span/(2*d.delta)))] # discrete points along the wing
     
     # get load distribution
     dist_load = [distributed_load_y(y) for y in y_sec]
     
-#    sum01 = 0
-#    for i in dist_load:
-#        sum01 += d.delta * i
-#    print(sum01, '!!!!!!!!!!!!!!!!')
-    
     # get shear distribution
-    shear = [shear_root()]
-    #shear = [0]
-    for y in range(1,len(y_sec)):
-        shear.append(shear[y-1] + dist_load[y]*d.delta)
+    shear = []
+    for y in range(0,len(y_sec)):
+        if y*d.delta < d.strut_loc:
+            shear.append(0)
+        
+        else:
+            shear.append(shear[y-1] + dist_load[y]*d.delta)
+    
+    #apply boundary condition
+    shear_bnd = shear[-1]  
+    shear = [i - shear_bnd for i in shear]
     
     # get moment distribution
-    #moment = [moment_root()]
-    moment=[13676.51-2750]
-    #moment=[13676.51]
-    for y in range(1,len(y_sec)):
-        moment.append(moment[y-1] + shear[y]*d.delta)
+    moment=[]
+    for y in range(0,len(y_sec)):
+        if y*d.delta < d.strut_loc:
+            moment.append(0)
+        
+        else:
+            moment.append(moment[y-1] + shear[y]*d.delta)
+
+    #apply boundary condition
+    moment_bnd = moment[-1]
+    moment = [i - moment_bnd for i in moment]
         
     # get cap thickness for strength constraint
     #computes thickness of tube (cm) at y based on bending strength sizing eq 40
     thickness = [100*moment[index]/(1.913*(radius(y))**2 * d.allowed_ax_stress*1000000)\
                  for index,y in enumerate(y_sec)] # in cm
+    
+    #discretize thickness based on thickness of carbon layer
+    for i, data in enumerate(thickness):
+        if data % d.carb_thick < d.carb_thick/2: # round down
+            thickness[i] = data//d.carb_thick * d.carb_thick
+            if thickness[i] == 0:
+                thickness[i] = d.carb_thick
+        
+        else: # round up
+            thickness[i] = (1 + data//d.carb_thick) * d.carb_thick
 
     # print weight of spar caps
     get_mass(thickness)
@@ -159,7 +177,14 @@ def size_bending():
     theta = [0]
     deflection=[0]
     for y in range(1,len(y_sec)):
-        theta.append(theta[y-1]+d.delta*moment[y]/(d.E*1000000*I[y]))
+        if y*d.delta < d.strut_loc:
+            theta.append(0)
+        else:
+            try:
+                theta.append(theta[y-1]+d.delta*moment[y]/(d.E*1000000*I[y]))
+            except:
+                theta.append(0)
+
     for y in range(1,len(y_sec)):
         deflection.append(deflection[y-1] + d.delta*theta[y])
         
@@ -180,19 +205,18 @@ def size_bending():
 data = size_bending()
 
 Ei = [d.E*i*1000000 for i in data['I']]
-plus_5 = [i +5 for i in data['y']]
-plt.plot(plus_5, Ei)
+plt.plot(data['y'], Ei)
 plt.title('EI vs spanwise distance')
 plt.xlabel('spanwise distance (m)')
-plt.ylabel('Ei')
+plt.ylabel('EI')
 plt.grid()
 plt.show()
 
 cord = [get_cord_y(i) for i in data['y']]
 plt.plot(data['y'], cord)
-plt.title('cord vs spanwise distance')
+plt.title('Chord vs Spanwise Distance')
 plt.xlabel('spanwise distance (m)')
-plt.ylabel('cord')
+plt.ylabel('chord (m)')
 plt.grid()
 plt.show()
 
@@ -216,13 +240,14 @@ plt.xlabel('Spanwise Distance (m)', fontsize = '18')
 plt.ylabel('Moment (N*m)', fontsize = '18')
 plt.grid()
 plt.show()
-    
-#plt.plot(data['y'], data['thickness'])
-#plt.title('Spar Cap Thickness vs Spanwise Distance', fontsize = '18')
-#plt.xlabel('Spanwise Distance (m)', fontsize = '18')
-#plt.ylabel('Thickness (cm)', fontsize = '18')
-#plt.grid()
-#plt.show()
+
+rad = [100*radius(y) for y in data['y']]
+plt.plot(data['y'], rad)
+plt.title('Inner Radius vs Spanwise Distance', fontsize = '18')
+plt.xlabel('Spanwise Distance (m)', fontsize = '18')
+plt.ylabel('Inner Radius (cm)', fontsize = '18')
+plt.grid()
+plt.show()
 
 plt.plot(data['y'], data['deflection'], color="red")
 plt.title('Wing Deflection vs Spanwise Distance', fontsize = '18')
@@ -238,11 +263,11 @@ ax.set_xlabel('Spanwise Distance (m)', fontsize = '18')
 ax.set_ylabel('Thickness (cm)', fontsize = '18', color="red")
 
 ax2=ax.twinx()
-rad = [radius(y) for y in data['y']]
+rad = [100*radius(y) for y in data['y']]
 ax2.plot(data['y'], rad, color="blue")
 #plt.title('Spar Inner Radius', fontsize = '18')
 #ax2.xlabel('Spanwise Distance (m)', fontsize = '18')
-ax2.set_ylabel('Inner Radius of Spar (m)', fontsize = '18', color="blue")
+ax2.set_ylabel('Inner Radius of Spar (cm)', fontsize = '18', color="blue")
 plt.grid()
 plt.show()
     
