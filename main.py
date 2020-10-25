@@ -206,17 +206,17 @@ data = size_bending()
 
 Ei = [d.E*i*1000000 for i in data['I']]
 plt.plot(data['y'], Ei)
-plt.title('EI vs spanwise distance')
-plt.xlabel('spanwise distance (m)')
-plt.ylabel('EI')
+plt.title('EI vs Spanwise Distance', fontsize = '18')
+plt.xlabel('Spanwise Distance (m)', fontsize = '18')
+plt.ylabel('EI (MPa * m^4)', fontsize = '18')
 plt.grid()
 plt.show()
 
 cord = [get_cord_y(i) for i in data['y']]
 plt.plot(data['y'], cord)
-plt.title('Chord vs Spanwise Distance')
-plt.xlabel('spanwise distance (m)')
-plt.ylabel('chord (m)')
+plt.title('Chord vs Spanwise Distance', fontsize = '18')
+plt.xlabel('Spanwise Distance (m)', fontsize = '18')
+plt.ylabel('Chord (m)', fontsize = '18')
 plt.grid()
 plt.show()
 
@@ -228,9 +228,9 @@ plt.grid()
 plt.show()
 
 plt.plot(data['y'], data['shear'])
-plt.title('Shear vs spanwise distance')
-plt.xlabel('spanwise distance (m)')
-plt.ylabel('Shear (N)')
+plt.title('Shear vs Spanwise Distance', fontsize = '18')
+plt.xlabel('Spanwise Distance (m)', fontsize = '18')
+plt.ylabel('Shear (N)', fontsize = '18')
 plt.grid()
 plt.show()
 
