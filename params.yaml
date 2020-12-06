@@ -1,7 +1,7 @@
 ---
 center_weight: 3000 # N
 N: 1.0 # flight load factor (L/W)
-span: 40 # m
+span: 39.5 # m
 wing_area: 54.8 # m^2
 # taper_ratio: .5
 V: 20 # m/s flight speed
@@ -11,10 +11,10 @@ R_inner: .1
 length: 20 # m length
 G: 4550.5 # Mpa torsion stiffness  modulus
 E: 140000 #127500 # Mpa bending stiffness modulus
-allowed_ax_stress:  185 #185 # Mpa max allowable axial stress (this number should be knocked down from the true value)
+allowed_ax_stress:  320 #185 # Mpa max allowable axial stress (this number should be knocked down from the true value)
 deflection: 5 # m max allowed bending deflection of spar
 delta: .001 # integration step size
 layup_density: 1500 # kg/m^3 density of carbon fiber layup
-strut_loc: 5 # m location of struct from fuselage
-carb_thick: .1 # cm thickness of one carbon fiber layer
+strut_loc: 7 # m location of struct from fuselage
+carb_thick:  .01778 #.0889 # .01778 # cm thickness of one carbon fiber layer
 ...

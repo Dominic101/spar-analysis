@@ -41,10 +41,10 @@ def get_cord_y(y):
     calculates cord length at a location y
     """
     if y < 11:
-        return 1.89
+        return 2.30
     
     else:
-        return 1.89 - (1.89-.95)/9 * (y-11)
+        return 2.30 - (2.30-1.15)/11.75 * (y-11)
 
 class Statics:
     def __init__(self):
@@ -69,7 +69,7 @@ def radius(y):
 
     if y <= 5.0:
         return 0.04*get_cord_y(5.0)
-    elif y <= 15:
+    elif y <= 12:
         return 0.04*get_cord_y(15)
     else:
         return 0.04*get_cord_y(d.span/2)
@@ -159,11 +159,13 @@ def size_bending():
     for i, data in enumerate(thickness):
         if data % d.carb_thick < d.carb_thick/2: # round down
             thickness[i] = data//d.carb_thick * d.carb_thick
-            if thickness[i] == 0:
-                thickness[i] = d.carb_thick
+            if thickness[i] <=2*d.carb_thick:
+                thickness[i] = 2*d.carb_thick
         
         else: # round up
             thickness[i] = (1 + data//d.carb_thick) * d.carb_thick
+            if thickness[i] <=2*d.carb_thick:
+                thickness[i] = 2*d.carb_thick
 
     # print weight of spar caps
     get_mass(thickness)
@@ -208,10 +210,10 @@ Ei = [d.E*i*1000000 for i in data['I']]
 plt.plot(data['y'], Ei)
 plt.title('EI vs Spanwise Distance', fontsize = '18')
 plt.xlabel('Spanwise Distance (m)', fontsize = '18')
-plt.ylabel('EI (MPa * m^4)', fontsize = '18')
+plt.ylabel('EI (N * m^2)', fontsize = '18')
 plt.grid()
 plt.show()
-
+#
 cord = [get_cord_y(i) for i in data['y']]
 plt.plot(data['y'], cord)
 plt.title('Chord vs Spanwise Distance', fontsize = '18')
@@ -240,7 +242,7 @@ plt.xlabel('Spanwise Distance (m)', fontsize = '18')
 plt.ylabel('Moment (N*m)', fontsize = '18')
 plt.grid()
 plt.show()
-
+#
 rad = [100*radius(y) for y in data['y']]
 plt.plot(data['y'], rad)
 plt.title('Inner Radius vs Spanwise Distance', fontsize = '18')
@@ -256,11 +258,13 @@ plt.ylabel('Deflection (m)', fontsize = '18')
 plt.grid()
 plt.show()
 
+thick_ = [int(i/.01778) for i in data['thickness']]
+
 fig,ax = plt.subplots()
-ax.plot(data['y'], data['thickness'], color="red",linewidth=7.0)
+ax.plot(data['y'], thick_, color="red",linewidth=7.0)
 plt.title('Spar Cap Thickness vs Spanwise Distance', fontsize = '18')
 ax.set_xlabel('Spanwise Distance (m)', fontsize = '18')
-ax.set_ylabel('Thickness (cm)', fontsize = '18', color="red")
+ax.set_ylabel('Number of Carbon Layers', fontsize = '18', color="red")
 
 ax2=ax.twinx()
 rad = [100*radius(y) for y in data['y']]
@@ -268,6 +272,7 @@ ax2.plot(data['y'], rad, color="blue")
 #plt.title('Spar Inner Radius', fontsize = '18')
 #ax2.xlabel('Spanwise Distance (m)', fontsize = '18')
 ax2.set_ylabel('Inner Radius of Spar (cm)', fontsize = '18', color="blue")
+
 plt.grid()
 plt.show()
     
